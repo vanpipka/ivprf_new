@@ -12,6 +12,7 @@ export default {
     {id: 9, name: "White", code: "White"},
     {id: 10, name: "Yellow", code: "Yellow"}
   ],
+  
   UNIT_SPEED: [
       {id: 0, name: "КМ/Ч", code: "kmh"},//+
       {id: 1, name: "М/С", code: "mc"},
