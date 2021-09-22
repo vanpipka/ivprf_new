@@ -8,6 +8,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import FplScreen from '../screens/FplScreen';
 import PlanesScreen from '../screens/PlanesScreen';
 import { Icon } from 'react-native-elements';
+import Const from '../constants/Const';
 
 function Page3() {
   return (

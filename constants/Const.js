@@ -1,6 +1,5 @@
 export default {
-  SERVER_URL: "https://rutyre.ru/fly/",
-  SERVER_IVPRF_URL: "https://rutyre.ru/fly/", 
+  SERVER_URL: "https://rutyre.ru/fly", 
   PLANE_COLOR: [
     {id: 0, name: "Black", code: "Black"},
     {id: 1, name: "Blue", code: "Blue"},

@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, TextInput, Alert, ActivityIndicator, AsyncStorage } from 'react-native';
+import Const from '../constants/Const';
 
 function PostHeaders(props) {
 
@@ -17,14 +18,15 @@ function PostHeaders(props) {
 async function getTokenAsync(props) {
 
   console.log(1);
-  const SIGNUP_URL = "http://84.38.182.177/api/auth/";//props.url;
+  const SIGNUP_URL = Const["SERVER_URL"] + "/api/auth/";//props.url;
   let result = "";
 
   let body = JSON.stringify({"login":"41486@mil.ru","password":"hExQX6q$"});
   let response  = await fetch(SIGNUP_URL, {method: 'POST', body: body});
   let auth_token = (""+response.headers.get('Set-Cookie')).replace("auth_token=", "").replace("; Path=/", "")
-
-  let data  = JSON.parse(await response.text());
+  let result_text = await response.text()
+  console.log(result_text);
+  let data  = JSON.parse(result_text);
 
   if (data['result'] == true && auth_token.length != 0) {
       await AsyncStorage.setItem('auth_token', auth_token);

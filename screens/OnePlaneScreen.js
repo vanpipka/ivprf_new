@@ -24,12 +24,11 @@ async function getPlaneInfoAsync(props) {
 
   console.log("api/plane/"+props);
   const AUTH_TOKEN = await AsyncStorage.getItem("auth_token");
-  const SIGNUP_URL = "http://84.38.182.177/api/plane/?id="+props;
+  const SIGNUP_URL = Const["SERVER_URL"] + "/api/plane/?id="+props;
   let result = "";
 
   let response  = await fetch(SIGNUP_URL, {method: 'GET', headers: {authorization: AUTH_TOKEN}});
   result = await response.text();
-  console.log(result);
   let data      = JSON.parse(result)
   return data
 
@@ -38,21 +37,24 @@ async function getPlaneInfoAsync(props) {
 async function makeRequestAsync(props) {
 
   console.log("/api/users/fpl/");
-  const SIGNUP_URL = "http://84.38.182.177/api/plane/";
+
+  const URL = Const["SERVER_URL"] + "/api/plane/?id=" + props["id"];
+  //const URL = "https://vseexpo.ru/worker/m/search/";
+  console.log(URL);
+
   const AUTH_TOKEN = await AsyncStorage.getItem("auth_token");
-  let body = JSON.stringify({"id": "2965"})
-  let result    = "";
-  let response  = await fetch(SIGNUP_URL, {method: 'POST', body: body, headers: {authorization: AUTH_TOKEN}});
 
-  console.log(await response.text());
-  /*let data      = JSON.parse(await response.text())
+  const headers = {"Content-Type": "application/json",
+                  "authorization": AUTH_TOKEN};
 
-  if (data['result'] == true && auth_token.length != 0) {
-      await AsyncStorage.setItem('auth_token', auth_token);
-      return {result: true}
+  let response  = await fetch(URL, {method: 'PUT', body: JSON.stringify(props), headers: headers});
+  let data      = JSON.parse(await response.text())
+
+  if (data['result'] == true
+    Alert.alert("Успех", "Данные успешно сохранены");
   }else{
-      return {result: false, text: "Какая то ошибка"}
-  }*/
+    Alert.alert("Отказ", data["error"]);
+  }
 }
 
 function getType(type){
@@ -116,7 +118,7 @@ function getSpeedUnit(data){
 }
 
 function getHeightUnit(data){
-  console.log(data);
+
   const UNIT_HEIGTH = Const["UNIT_HEIGTH"];
   let unit = "";
   for (var i = 0; i < UNIT_HEIGTH.length; i++) {
@@ -258,6 +260,16 @@ export default class OnePlaneScreen extends React.PureComponent {
       this.setState({errors: newData})
     } else {
 
+      let certificate_end_date = "";
+      let insurance_end_date = "";
+
+      if (this.state.certificate_end_date != "") {
+          certificate_end_date = new Date(this.state.certificate_end_date).getTime().toString().substring(0, 10)
+      };
+      if (this.state.insurance_end_date != "") {
+          insurance_end_date = new Date(this.state.insurance_end_date).getTime().toString().substring(0, 10)
+      };
+
       let data = {
           colour_and_markings: this.state.color,
           emergency_equipment: {dinghies:{}},
@@ -278,7 +290,9 @@ export default class OnePlaneScreen extends React.PureComponent {
           subcategory: "plane",
           wake_turbulence_cat: this.state.wake_turbulence_cat.code == undefined ? "" : this.state.wake_turbulence_cat.code,
           type: this.state.type.icao_code  == undefined ? "" : this.state.type.icao_code,
-          name: this.state.type.icao_code + " " + this.state.reg_number
+          name: this.state.type.icao_code + " " + this.state.reg_number,
+          insurance_end_date: insurance_end_date,
+          certificate_end_date: certificate_end_date
       }
 
       let result = makeRequestAsync(data)
@@ -311,7 +325,6 @@ export default class OnePlaneScreen extends React.PureComponent {
 
   _onReturnDate = (props) => {
 
-    console.log(props);
     let newData = {datepicker: {use: false, field: ""}}
     if (props["type"] == "set") {
         if (this.state.datepicker.field == "certificate_end_date") {
@@ -326,17 +339,14 @@ export default class OnePlaneScreen extends React.PureComponent {
   }
 
   _onPressAlert = (props) => {
-      console.log(props.name);
       this.setState({overlay: true, overlay_prop: {name: props.name, type: 0}})
   }
 
   _onPressSelect = (props) => {
-      console.log(props.name);
       this.setState({overlay: true, overlay_prop: {name: props.name, type: 1}})
   }
 
   _onPressDate = (props) => {
-      console.log(props.name);
       this.setState({datepicker: {use: true, field: props.name}})
   }
 

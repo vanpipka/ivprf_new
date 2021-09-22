@@ -2,6 +2,7 @@ import React from 'react';
 import { Platform, Alert, ScrollView, ActivityIndicator, StyleSheet, Text, View, TextInput, TouchableOpacity, AsyncStorage, KeyboardAvoidingView, FlatList, RefreshControl } from 'react-native';
 import ErrorPage from '../components/ErrorPage'
 import FplItem from '../components/FplItem'
+import Const from '../constants/Const';
 
 function PostHeaders(props) {
 
@@ -18,7 +19,7 @@ function PostHeaders(props) {
 async function getTokenAsync(props) {
 
   console.log("/api/users/fpl/");
-  const SIGNUP_URL = "http://84.38.182.177/api/users/fpl/";
+  const SIGNUP_URL = Const["SERVER_URL"] + "/api/users/fpl/";
   const AUTH_TOKEN = await AsyncStorage.getItem("auth_token");
   let result    = "";
   let response  = await fetch(SIGNUP_URL, {method: 'POST', body: {}, headers: {authorization: AUTH_TOKEN}});
