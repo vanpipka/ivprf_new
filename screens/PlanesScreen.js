@@ -3,6 +3,7 @@ import { Platform, Alert, ScrollView, ActivityIndicator, StyleSheet, Text, View,
 import ErrorPage from '../components/ErrorPage'
 import PlaneItem from '../components/PlaneItem'
 import Const from '../constants/Const';
+import {setPlaneInfo} from '../components/DB_API';
 
 function PostHeaders(props) {
 
@@ -16,6 +17,7 @@ function PostHeaders(props) {
   return headers;
 
 }
+
 async function getTokenAsync(props) {
 
   console.log("/api/users/plane/");
@@ -23,7 +25,9 @@ async function getTokenAsync(props) {
   const AUTH_TOKEN = await AsyncStorage.getItem("auth_token");
   let result    = "";
   let response  = await fetch(SIGNUP_URL, {method: 'POST', body: {}, headers: {authorization: AUTH_TOKEN}});
-  let data      = JSON.parse(await response.text())
+  let text = await response.text()
+
+  let data      = JSON.parse(text)
 
   return data
 
@@ -75,6 +79,7 @@ export default class PlanesScreen extends React.PureComponent {
 
         if (data["data"] !== undefined){
           this.setState({loading: false, data: data["data"] })
+          setPlaneInfo(data["data"])
         }else{
           if (data["title"] == "UNAUTHORIZED"){
             this.props.navigation.navigate('LoginScreen', {user: {}});
@@ -85,6 +90,11 @@ export default class PlanesScreen extends React.PureComponent {
   }
 
   _onPressItem = (props) => {
+
+      if (props["id"] == undefined) {
+          return;
+      }
+
       this.props.navigation.navigate("OnePlaneScreen", props);
   };
 

@@ -85,8 +85,8 @@ export default class FplScreen extends React.PureComponent {
   }
 
   _onPressItem = (props) => {
-      console.log(props);
-      //this.props.navigation.navigate("Article", props.data);
+      //console.log(props);
+      this.props.navigation.navigate("OneFplScreen", {"id": props.data.id});
 
   };
 

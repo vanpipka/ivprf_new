@@ -78,7 +78,7 @@ export default class FplItem extends React.PureComponent {
                   <View style={{flexDirection: 'row'}}>
                     <View style={{borderRadius: 5, borderColor: "#e1e3e6", backgroundColor: "#fcfcfc", borderWidth:1, width: '40%', padding: 8, alignItems: 'center'}}>
                       <Text style={{color: 'black', fontWeight: 'bold'}}>{data.pol.aerodrome}</Text>
-                      <Text style={{color: 'grey', fontSize: 12, height: 30}}>Екатеринбург (кол...</Text>
+                      <Text style={{color: 'grey', fontSize: 12, height: 30}}>{data.pol.name}</Text>
                       <View style={{borderTopWidth:1, width: '100%', borderColor: "#e1e3e6", alignItems: 'center'}}>
                         <Text style={{color: 'grey', fontSize: 12}}>{data.pol.date}</Text>
                       </View>
@@ -94,7 +94,7 @@ export default class FplItem extends React.PureComponent {
 
                     <View style={{borderRadius: 5, borderColor: "#e1e3e6", backgroundColor: "#fcfcfc", borderWidth:1, width: '40%', padding: 8, alignItems: 'center'}}>
                       <Text style={{color: 'black', fontWeight: 'bold'}}>{data.pod.aerodrome}</Text>
-                      <Text style={{color: 'grey', fontSize: 12, height: 30}}>Тверь</Text>
+                      <Text style={{color: 'grey', fontSize: 12, height: 30}}>{data.pod.name}</Text>
                       <View style={{borderTopWidth:1, width: '100%', borderColor: "#e1e3e6", alignItems: 'center'}}>
                         <Text style={{color: 'grey', fontSize: 12}}>{data.pod.date}</Text>
                       </View>

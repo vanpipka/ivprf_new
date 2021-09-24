@@ -10,8 +10,10 @@ import { createStackNavigator } from '@react-navigation/stack';
 //import { GetTagsInfo } from './components/WebAPI';
 import LoginScreen from './screens/LoginScreen';
 import OnePlaneScreen from './screens/OnePlaneScreen';
+import OneFplScreen from './screens/OneFplScreen';
 import MainScreen from './screens/MainScreen';
 import PlaneTypeSearch from './screens/PlaneTypeSearchScreen';
+import { createTables } from './components/DB_API';
 
 //import VideoCall from './screens/VideoCallScreen';
 
@@ -54,6 +56,11 @@ export default class App extends React.Component {
                 options={{}}
               />
               <Stack.Screen
+                name="OneFplScreen"
+                component={OneFplScreen}
+                options={{}}
+              />
+              <Stack.Screen
                 name="PlaneTypeSearch"
                 component={PlaneTypeSearch}
                 options={{}}
@@ -66,11 +73,11 @@ export default class App extends React.Component {
   }
 
   _loadResourcesAsync = async () => {
-
+    console.log('_loadResourcesAsync');
     return Promise.all([
       Asset.loadAsync([
         require('./assets/icon.png'),
-      ]),
+      ], createTables()),
       //GetTagsInfo(),
       //Font.loadAsync({
         // This is the font that we are using for our tab bar

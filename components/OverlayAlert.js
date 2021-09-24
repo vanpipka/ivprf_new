@@ -1,18 +1,76 @@
 import * as React from 'react';
-import { Text, View, StyleSheet, TouchableOpacity} from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity, ActivityIndicator} from 'react-native';
 import { Icon, Divider, ListItem  } from 'react-native-elements';
 import Const from '../constants/Const';
+import {getPlaneInfo} from '../components/DB_API';
 
 export default class OverlayAlert extends React.PureComponent {
 
+  constructor(props) {
+      super(props);
+      const { navigation } = this.props;
+      this._setPlaneData = this._setPlaneData.bind(this);
+
+      console.log('OverlayAlert CONSTRUCTOR');
+
+      this.state={
+          loading: true,
+          key: this.props.data.name
+      };
+
+  }
+
+  componentDidMount(){
+    this._loadDataAsync();
+  }
+
+  _setPlaneData(props){
+      console.log("_setPlaneData");
+      for (var i = 0; i < props.length; i++) {
+        props[i]['description'] = props[i]['type']
+      }
+      this.setState({loading: false, data: props})
+  }
+
+  _loadDataAsync = async () => {
+      if (this.state.key == "INDEX_ARRAY") {
+        getPlaneInfo(this._setPlaneData)
+      }else{
+        this.setState({loading: false, data: Const[this.props.data.name]})
+      }
+  }
+
   _onPress = (props) => {
-      props["field_id"] = this.props.data.name;      
-      this.props.onPress(props)
+    if (props != undefined) {
+      props["field_id"] = this.props.data.name;
+    }else{
+      props = {}
+    }
+    this.props.onPress(props)
   }
 
   render() {
 
-    const DATA = Const[this.props.data.name]
+    if (this.state.loading == true) {
+        return(
+          <View style={styles.container}>
+            <View style={{width: "100%", alignItems: "flex-end"}}>
+              <TouchableOpacity onPress={()=>{this._onPress()}}>
+                  <Icon
+                    name='close'
+                    color='#ccd8e6' />
+              </TouchableOpacity>
+            </View>
+            <View style={{ }}>
+              <ActivityIndicator  size="large" color="red" />
+            </View>
+
+          </View>
+        )
+    }
+
+
+    const DATA = this.state["data"]
     let item = null;
     if (this.props.data.type == 0) {
 
@@ -24,6 +82,13 @@ export default class OverlayAlert extends React.PureComponent {
 
       return (
         <View style={styles.container}>
+          <View style={{width: "100%", alignItems: "flex-end"}}>
+            <TouchableOpacity onPress={()=>{this._onPress()}}>
+                <Icon
+                  name='close'
+                  color='#ccd8e6' />
+            </TouchableOpacity>
+          </View>
           <View style={{alignItems: 'center', justifyContent: 'center'}}>
               {item}
           </View>
@@ -31,11 +96,12 @@ export default class OverlayAlert extends React.PureComponent {
       );
     } else {
 
-      DATA.map((item, i) => (
-                console.log(item)
-              ))
-
       if (typeof DATA === 'object'){
+
+      //  DATA.map((item, i) => (
+      //            console.log(item)
+      //          ))
+
           item = DATA.map((item, i) => (
                     <ListItem key={item.id} bottomDivider onPress={() => {this._onPress(item)}}>
                       <View style={{width: "100%"}}>
@@ -50,6 +116,13 @@ export default class OverlayAlert extends React.PureComponent {
 
       return (
         <View style={styles.container}>
+          <View style={{width: "100%", alignItems: "flex-end"}}>
+            <TouchableOpacity onPress={()=>{this._onPress()}}>
+                <Icon
+                  name='close'
+                  color='#ccd8e6' />
+            </TouchableOpacity>
+          </View>
           {item}
         </View>
       )
@@ -60,7 +133,7 @@ export default class OverlayAlert extends React.PureComponent {
 
 const styles = StyleSheet.create({
   container: {
-    width: "80%"
+    justifyContent: "center",
   },
   image: {
     resizeMode: "stretch",

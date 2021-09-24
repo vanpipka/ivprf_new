@@ -6,6 +6,7 @@ import OverlayAlert from '../components/OverlayAlert'
 import PlaneItem from '../components/PlaneItem';
 import Const from '../constants/Const';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import {getPlaneInfo} from '../components/DB_API';
 
 function PostHeaders(props) {
 
@@ -22,20 +23,22 @@ function PostHeaders(props) {
 
 async function getPlaneInfoAsync(props) {
 
-  console.log("api/plane/"+props);
+
   const AUTH_TOKEN = await AsyncStorage.getItem("auth_token");
-  const SIGNUP_URL = Const["SERVER_URL"] + "/api/plane/?id="+props;
+  const SIGNUP_URL = Const["SERVER_URL"] + "/api/users/fpl/?id="+props["id"];
+  console.log(SIGNUP_URL);
   let result = "";
 
-  let response  = await fetch(SIGNUP_URL, {method: 'GET', headers: {authorization: AUTH_TOKEN}});
+  let response  = await fetch(SIGNUP_URL, {method: 'POST', headers: {"authorization": AUTH_TOKEN, "Content-Type": "application/json"}});
   result = await response.text();
-  console.log(result);
   let data      = JSON.parse(result)
   return data
 
 }
 
 async function makeRequestAsync(id, props) {
+
+  return;
 
   console.log("/api/users/fpl/");
 
@@ -48,15 +51,8 @@ async function makeRequestAsync(id, props) {
   const headers = {"Content-Type": "application/json",
                   "authorization": AUTH_TOKEN};
 
-  if (id != '2960') {
-    console.log('заплатка');
-    return
-  }
-
   let response  = await fetch(URL, {method: 'PUT', body: JSON.stringify(props), headers: headers});
   let data      = JSON.parse(await response.text())
-
-  console.log(data);
 
   if (data['result'] == true){
     Alert.alert("Успех", "Данные успешно сохранены");
@@ -104,8 +100,21 @@ function getFlyRules(data){
         break;
     };
   }
-
   return fly_rules
+
+}
+
+function getFlyType(data){
+
+  const FLYTYPES = Const["FLYTYPES_ARRAY"];
+  let fly_type = {};
+  for (var i = 0; i < FLYTYPES.length; i++) {
+    if (FLYTYPES[i]["code"] === data){
+        fly_type = FLYTYPES[i];
+        break;
+    };
+  }
+  return fly_type
 
 }
 
@@ -143,24 +152,29 @@ function getHeightUnit(data){
 function makePlaneInfo(data){
 
     let plane = {};
-    plane["id"]             = data["id"]
-    plane["reg_number"]     = data["meta"]["reg_number"]
-    plane["opr"]            = data["meta"]["organization"]
-    plane["cruising_speed"] = data["cruising_speed"]["value"]
-    plane["cruising_speed_unit"]  = getSpeedUnit(data["cruising_speed"]["unit"])
-    plane["cruising_level_unit"]  = getHeightUnit(data["cruising_level"]["unit"])
-    plane["cruising_level"] = data["cruising_level"]["value"]
-    plane["color"]          = data["colour_and_markings"]
-    plane["fly_rules"]      = getFlyRules(data["flight_rules"])
-    plane["wake_turbulence_cat"] = getTurbulence(data["wake_turbulence_cat"])
-    plane["certificate_end_date"] = data["certificate_end_date"]
-    plane["insurance_end_date"] = data["insurance_end_date"]
-    plane["type"]               = getType(data["meta"]["type"])
+    plane["index"]             = data["plane"]["number"]
+    //plane["reg_number"]     = data["meta"]["reg_number"]
+    //plane["opr"]            = data["meta"]["organization"]
+    plane["cruising_speed"] = data["speed"]["value"]
+    plane["cruising_speed_unit"]  = getSpeedUnit(data["speed"]["unit"])
+    plane["cruising_level_unit"]  = getHeightUnit(data["level"]["unit"])
+    plane["cruising_level"] = data["level"]["value"]
+    //plane["color"]          = data["colour_and_markings"]
+    plane["fly_rules"]      = getFlyRules(data["plane"]["flight_rules"])
+    plane["fly_type"]      = getFlyType(data["plane"]["type_of_flight"])
+    plane["count"]      = data["plane"]["count"].toString()
+    plane["wake_turbulence_cat"] = getTurbulence(data["plane"]["wtc"])
+    //plane["certificate_end_date"] = data["certificate_end_date"]
+    //plane["insurance_end_date"] = data["insurance_end_date"]
+    plane["type"]               = getType(data["plane"]["plane_type"])
+    plane["equipment"]               = data["equipment"]
+    plane["pol_a"]               = {"name": data["pol"]["aerodrome"], "description": data["pol"]["name"]};
+    plane["pol_time"]               = data["pol"]["date"]
 
     return plane
 }
 
-export default class OnePlaneScreen extends React.PureComponent {
+export default class OneFplScreen extends React.PureComponent {
 
   static navigationOptions = ({navigation, screenProps}) => {
 
@@ -180,7 +194,7 @@ export default class OnePlaneScreen extends React.PureComponent {
       super(props);
       const { navigation } = this.props;
 
-      console.log('PLANE SCREEN CONSTRUCTOR');
+      console.log('ONE PLANE SCREEN CONSTRUCTOR');
 
       this.state={
           loading: true,
@@ -207,14 +221,17 @@ export default class OnePlaneScreen extends React.PureComponent {
 
   _loadDataAsync = async () => {
 
+    console.log(this.props.route);
+
     if (this.props.route["params"] != undefined
       && this.props.route["params"]["id"] != undefined) {
 
-        let data = await getPlaneInfoAsync(this.props.route["params"]["id"]);
+        let data = await getPlaneInfoAsync(this.props.route["params"]);
 
-        if (data["data"] !== undefined){
-          let planeInfo = makePlaneInfo(data["data"]);
+        if (data["id"] !== undefined){
+          let planeInfo = makePlaneInfo(data);
           planeInfo["loading"] = false;
+          planeInfo["error"] = "";
           planeInfo["errors"] = {};
           this.setState(planeInfo)
         }else{
@@ -226,6 +243,7 @@ export default class OnePlaneScreen extends React.PureComponent {
         }
     } else {
         let planeInfo = {"loading": false,
+                      "error": "",
                       "reg_number": "",
                       "opr": "",
                       "cruising_speed": "",
@@ -312,6 +330,8 @@ export default class OnePlaneScreen extends React.PureComponent {
 
   _onReturnAlert = (props) => {
 
+    console.log("_onReturnAlert", props);
+
     let newData = {overlay: false}
 
     if (props != undefined) {
@@ -323,6 +343,11 @@ export default class OnePlaneScreen extends React.PureComponent {
                   newData["errors"] = {}
           } else if (props["field_id"] == "PLANE_COLOR") {
                   newData["color"] = props.code
+          } else if (props["field_id"] == "INDEX_ARRAY") {
+                  const AIRCRAFT_TYPE_ARRAY = Const["AIRCRAFT_TYPE_ARRAY"];
+                  let result = AIRCRAFT_TYPE_ARRAY.filter(data => data["icao_code"] == props["type"]);
+                  if (result.length > 0) {this._setPlaneType(result[0])}
+                  newData["index"] = props.name
           } else if (props["field_id"] == "UNIT_HEIGTH") {
                   newData["cruising_level_unit"] = props
           } else if (props["field_id"] == "UNIT_SPEED") {
@@ -362,6 +387,7 @@ export default class OnePlaneScreen extends React.PureComponent {
 
   _setPlaneType = (props) => {
 
+    console.log("_setPlaneType", props);
       //console.log(props);
         /*"cruising_level": "6860",
           "cruising_speed": "415",
@@ -402,12 +428,13 @@ export default class OnePlaneScreen extends React.PureComponent {
             </View>
           )
       }
+
       else if (this.state.error != "") {
           return(<View style={styles.container}>
             <ErrorPage onClose={this._loadDataAsync} errorText={this.state.error}/>
           </View>)
       }else{
-        const buttons = ['Профиль', 'Оборудование']
+        const buttons = ['Форма', 'Карта', 'История']
         let body = null;
         let datepicker = null;
 
@@ -477,14 +504,30 @@ export default class OnePlaneScreen extends React.PureComponent {
 
             <View style={{marginTop: 10,zindex: 0}}>
               <Text style={[styles.inputArticle, this.state.errors.reg_number ? {color: "red"} : {}]}>
-                Регистрационный номер
+                3. Тип сообщения
               </Text>
               <View style={styles.inputArticleBorder}>
-                <Text>                                                  </Text>
+                <Text>                                    </Text>
               </View>
-              <TextInput style={[styles.inputView, this.state.errors.reg_number ? {borderColor: "red"} : {}]} value = {this.state.reg_number} onChangeText={(text) => {this.setState({reg_number: text, errors: {}})}}>
+              <TextInput style={[styles.inputView, this.state.errors.reg_number ? {borderColor: "red"} : {}]} value = {this.state.messagetype} onChangeText={(text) => {this.setState({messagetype: text, errors: {}})}}>
               </TextInput>
-              <TouchableOpacity style={styles.alert} onPress={()=>this._onPressAlert({name: "REG_NUMBER_ALERT"})}>
+            </View>
+
+            <View style={{marginTop: 10,zindex: 0}}>
+              <Text style={[styles.inputArticle, this.state.errors.reg_number ? {color: "red"} : {}]}>
+                7. Опознавательный индекс ВС
+              </Text>
+              <View style={styles.inputArticleBorder}>
+                <Text>                                                               </Text>
+              </View>
+              <TouchableOpacity style={[styles.inputView, this.state.errors.index ? {borderColor: "red"} : {}]} onPress={()=>this._onPressSelect({name: "INDEX_ARRAY"})}>
+                <View style={{flexDirection: "row"}}>
+                  <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
+                    {this.state.index}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.alert} onPress={()=>this._onPressAlert({name: "INDEX_ALERT"})}>
                   <Icon
                     name='help-outline'
                     color='#ccd8e6' />
@@ -493,11 +536,70 @@ export default class OnePlaneScreen extends React.PureComponent {
             </View>
 
             <View style={{marginTop: 4,zindex: 0}}>
-              <Text style={[styles.inputArticle, this.state.errors.type ? {color: "red"} : {}]}>
-                Тип
+                <Text style={styles.inputArticle}>
+                  8. Правила полетов
+                </Text>
+                <View style={styles.inputArticleBorder}>
+                  <Text>                                        </Text>
+                </View>
+                <TouchableOpacity style={styles.inputView} onPress={()=>this._onPressSelect({name: "FLYRULES_ARRAY"})}>
+                  <View style={{flexDirection: "row"}}>
+                    <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
+                      {this.state.fly_rules.name}
+                    </Text>
+                    <Text style = {{ color: "#688bb0", fontWeight: "bold", paddingLeft: 8}}>
+                      {this.state.fly_rules.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.alert} onPress={()=>this._onPressAlert({name: "FLY_RULE_ALERT"})}>
+                    <Icon
+                      name='help-outline'
+                      color='#ccd8e6' />
+                </TouchableOpacity>
+            </View>
+
+            <View style={{marginTop: 4,zindex: 0}}>
+                <Text style={styles.inputArticle}>
+                  8. Тип полета
+                </Text>
+                <View style={styles.inputArticleBorder}>
+                  <Text>                           </Text>
+                </View>
+                <TouchableOpacity style={styles.inputView} onPress={()=>this._onPressSelect({name: "FLYTYPES_ARRAY"})}>
+                  <View style={{flexDirection: "row"}}>
+                    <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
+                      {this.state.fly_type.name}
+                    </Text>
+                    <Text style = {{ color: "#688bb0", fontWeight: "bold", paddingLeft: 8}}>
+                      {this.state.fly_type.description}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.alert} onPress={()=>this._onPressAlert({name: "FLY_TYPE_ALERT"})}>
+                    <Icon
+                      name='help-outline'
+                      color='#ccd8e6' />
+                </TouchableOpacity>
+            </View>
+
+            <View style={{marginTop: 10,zindex: 0}}>
+              <Text style={[styles.inputArticle, this.state.errors.reg_number ? {color: "red"} : {}]}>
+                9. Количество ВС
               </Text>
               <View style={styles.inputArticleBorder}>
-                <Text>        </Text>
+                <Text>                                   </Text>
+              </View>
+              <TextInput keyboardType="numeric" style={[styles.inputView, this.state.errors.index ? {borderColor: "red"} : {}]} value = {this.state.count} onChangeText={(text) => {this.setState({count: text, errors: {}})}}>
+              </TextInput>
+            </View>
+
+            <View style={{marginTop: 4,zindex: 0}}>
+              <Text style={[styles.inputArticle, this.state.errors.type ? {color: "red"} : {}]}>
+                9. Тип ВС
+              </Text>
+              <View style={styles.inputArticleBorder}>
+                <Text>                   </Text>
               </View>
               <TouchableOpacity style={[styles.inputView, this.state.errors.type ? {borderColor: "red"} : {}]} onPress={()=>this.props.navigation.navigate('PlaneTypeSearch', {onGoBack: this._setPlaneType})}>
                 <View style={{flexDirection: "row"}}>
@@ -518,10 +620,10 @@ export default class OnePlaneScreen extends React.PureComponent {
 
             <View style={{marginTop: 4,zindex: 0}}>
               <Text style={[styles.inputArticle, this.state.errors.wake_turbulence_cat ? {color: "red"} : {}]}>
-                Категория турб. следа
+                9. Категория турбулентности следа
               </Text>
               <View style={styles.inputArticleBorder}>
-                <Text>                                             </Text>
+                <Text>                                                                      </Text>
               </View>
               <TouchableOpacity style={[styles.inputView, this.state.errors.wake_turbulence_cat ? {borderColor: "red"} : {}]} onPress={()=>this._onPressSelect({name: "WAKETURBULENCE_ARRAY"})}>
                 <View style={{flexDirection: "row"}}>
@@ -540,39 +642,52 @@ export default class OnePlaneScreen extends React.PureComponent {
               </TouchableOpacity>
             </View>
 
-            <View style={{marginTop: 4,zindex: 0}}>
-              <Text style={styles.inputArticle}>
-                Цвет и знак ВС (A/)
+            <View style={{marginTop: 10,zindex: 0}}>
+              <Text style={[styles.inputArticle, this.state.errors.reg_number ? {color: "red"} : {}]}>
+                10. Оборудование
               </Text>
               <View style={styles.inputArticleBorder}>
-                <Text>                                       </Text>
+                <Text>                                     </Text>
               </View>
-              <TouchableOpacity style={styles.inputView} onPress={()=>this._onPressSelect({name: "PLANE_COLOR"})}>
-                <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
-                  {this.state.color}
-                </Text>
-              </TouchableOpacity>
-
+              <TextInput style={[styles.inputView, this.state.errors.equipment ? {borderColor: "red"} : {}]} value = {this.state.equipment} onChangeText={(text) => {this.setState({equipment: text, errors: {}})}}>
+              </TextInput>
             </View>
 
-            <View style={{marginTop: 4,zindex: 0}}>
-              <Text style={styles.inputArticle}>
-                Правила полета
+            <View style={{marginTop: 10,zindex: 0}}>
+              <Text style={[styles.inputArticle, this.state.errors.reg_number ? {color: "red"} : {}]}>
+                13. Аэродром вылета
               </Text>
               <View style={styles.inputArticleBorder}>
-                <Text>                                 </Text>
+                <Text>                                            </Text>
               </View>
-              <TouchableOpacity style={styles.inputView} onPress={()=>this._onPressSelect({name: "FLYRULES_ARRAY"})}>
+              <TouchableOpacity style={[styles.inputView, this.state.errors.pol_a ? {borderColor: "red"} : {}]} onPress={()=>this._onPressSelect({name: "AERODROMS"})}>
                 <View style={{flexDirection: "row"}}>
                   <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
-                    {this.state.fly_rules.name}
+                    {this.state.pol_a.name}
                   </Text>
                   <Text style = {{ color: "#688bb0", fontWeight: "bold", paddingLeft: 8}}>
-                    {this.state.fly_rules.description}
+                    {this.state.pol_a.description}
                   </Text>
                 </View>
               </TouchableOpacity>
+              <TouchableOpacity style={styles.alert} onPress={()=>this._onPressAlert({name: "AERODROMS_ALERT"})}>
+                <Icon
+                  name='help-outline'
+                  color='#ccd8e6' />
+              </TouchableOpacity>
             </View>
+
+            <View style={{marginTop: 10,zindex: 0}}>
+              <Text style={[styles.inputArticle, this.state.errors.pol_time ? {color: "red"} : {}]}>
+                13. Время вылета
+              </Text>
+              <View style={styles.inputArticleBorder}>
+                <Text>                                     </Text>
+              </View>
+              <TextInput style={[styles.inputView, this.state.errors.pol_time ? {borderColor: "red"} : {}]} value = {this.state.pol_time} onChangeText={(text) => {this.setState({equipment: text, errors: {}})}}>
+              </TextInput>
+            </View>
+
 
             <View style={{marginTop: 4,zindex: 0}}>
               <Text style={styles.inputArticle}>
@@ -601,61 +716,6 @@ export default class OnePlaneScreen extends React.PureComponent {
                   <Text style={{fontWeight: "bold", color: "#688bb0"}}>{this.state.cruising_speed_unit.name}</Text>
               </TouchableOpacity>
             </View>
-
-            <View style={{marginTop: 4,zindex: 0}}>
-              <Text style={styles.inputArticle}>
-                OPR/
-              </Text>
-              <View style={styles.inputArticleBorder}>
-                <Text>           </Text>
-              </View>
-              <TextInput style={styles.inputView} value = {this.state.opr} onChangeText={(text) => {this.setState({opr: text})}}>
-              </TextInput>
-              <TouchableOpacity style={styles.alert} onPress={()=>this._onPressAlert({name: "OPR_ALERT"})}>
-                <Icon
-                  name='help-outline'
-                  color='#ccd8e6' />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{marginTop: 4,zindex: 0}}>
-              <Text style={styles.inputArticle}>
-                Дата окончания СЛГ
-              </Text>
-              <View style={styles.inputArticleBorder}>
-                <Text>                                          </Text>
-              </View>
-              <TouchableOpacity style={styles.inputView} onPress={()=>this._onPressDate({name: "certificate_end_date"})}>
-                <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
-                  {this.state.certificate_end_date}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.alert,{borderWidth: 0}]}>
-                <Icon
-                  name='date-range'
-                  color='#ccd8e6' />
-              </TouchableOpacity>
-            </View>
-
-            <View style={{marginTop: 4,zindex: 0}}>
-              <Text style={styles.inputArticle}>
-                Дата окончания страховки
-              </Text>
-              <View style={styles.inputArticleBorder}>
-                <Text>                                                       </Text>
-              </View>
-              <TouchableOpacity style={styles.inputView} onPress={()=>this._onPressDate({name: "insurance_end_date"})}>
-                <Text style = {{ color: "#4d7198", fontWeight: "bold"}}>
-                  {this.state.insurance_end_date}
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.alert,{borderWidth: 0}]}>
-                <Icon
-                  name='date-range'
-                  color='#ccd8e6' />
-              </TouchableOpacity>
-            </View>
-
           </ScrollView>
         }
 
@@ -675,8 +735,10 @@ export default class OnePlaneScreen extends React.PureComponent {
             <TouchableOpacity style={styles.button} onPress={()=>{this._savePlane()}}>
               <Text style={{fontWeight: 'bold', color: 'white'}}>Сохранить</Text>
             </TouchableOpacity>
-            <Overlay isVisible={this.state.overlay} onBackdropPress={()=>this.setState({overlay: false})}>
-              <OverlayAlert data={this.state.overlay_prop} onPress = {this._onReturnAlert}/>
+            <Overlay fullScreen isVisible={this.state.overlay} overlayStyle={{alignItems: "center"}} onBackdropPress={()=>this.setState({overlay: false})}>
+              <ScrollView style={{width: "100%", padding:4}}>
+                <OverlayAlert data={this.state.overlay_prop} onPress = {this._onReturnAlert}/>
+              </ScrollView>
             </Overlay>
 
             {datepicker}
