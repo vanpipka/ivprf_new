@@ -346,7 +346,7 @@ export default class OneFplScreen extends React.PureComponent {
           } else if (props["field_id"] == "INDEX_ARRAY") {
                   const AIRCRAFT_TYPE_ARRAY = Const["AIRCRAFT_TYPE_ARRAY"];
                   let result = AIRCRAFT_TYPE_ARRAY.filter(data => data["icao_code"] == props["type"]);
-                  if (result.length > 0) {this._setPlaneType(result[0])}
+                  if (result.length > 0) {this._setPlaneType({"id": result[0]["id"], "data": result[0]})}
                   newData["index"] = props.name
           } else if (props["field_id"] == "UNIT_HEIGTH") {
                   newData["cruising_level_unit"] = props

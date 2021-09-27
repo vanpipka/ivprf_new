@@ -64,7 +64,12 @@ function createTablePlanes(db) {
     tx.executeSql(
       "create table if not exists plane (id integer primary key not null, type text, name text, deleted boolean);",
         null,
-        console.log("table plane created"),
+        tx.executeSql(
+          "insert or replace into plane (id, type, name, deleted) values (000,'ZZZZ','ZZZZ', 0);",
+            null,
+            console.log('table plane was created'),
+            (txObj, error) => console.log('Error ', error)
+        ),
         (txObj, error) => console.log('Error ', error)
     );
   });
