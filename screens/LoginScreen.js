@@ -20,7 +20,10 @@ async function getTokenAsync(props) {
   console.log(1);
   const SIGNUP_URL = Const["SERVER_URL"] + "/api/auth/";//props.url;
   let result = "";
-
+  //console.log(Const["SERVER_URL"] + "/api/test/");
+  //let response  = await fetch(Const["SERVER_URL"] + "/api/test/", {method: 'GET'});
+  //let auth_token = (""+response.headers.get('Set-Cookie')).replace("auth_token=", "").replace("; Path=/", "")
+  //let result_text = await response.text()
   let body = JSON.stringify({"login":"41486@mil.ru","password":"hExQX6q$"});
   let response  = await fetch(SIGNUP_URL, {method: 'POST', body: body});
   let auth_token = (""+response.headers.get('Set-Cookie')).replace("auth_token=", "").replace("; Path=/", "")
